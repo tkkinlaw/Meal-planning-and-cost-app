@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#065f46">
+  <meta name="description" content="Private ingredient costing, recipes, and weekly meal planning.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Food Cost & Recipe Manager for Paprika 3</title>
+
+  <!-- Populated with a self-contained data URI manifest below. -->
+  <link id="manifest" rel="manifest">
+  <link id="touch-icon" rel="apple-touch-icon">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" async></script>
+
+  <!-- Complete fallback styling: the app remains usable without the CDN. -->
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17382e; background: #f3f7f4; color-scheme: light;
+    }
+    * { box-sizing: border-box }
+    body { margin: 0 }
+    button, input, select, textarea { font: inherit }
+    button, input, select, textarea { border-radius: .6rem }
+    button {
+      cursor: pointer; border: 1px solid #cbd9d1; background: white;
+      color: #174b39; padding: .65rem .9rem; min-height: 44px; font-weight: 600;
+    }
+    button:hover { background: #e8f4ec }
+    button:disabled { opacity: .5; cursor: not-allowed }
+    button.primary { background: #047857; color: white; border-color: #047857 }
+    button.primary:hover { background: #065f46 }
+    button.danger { color: #a12a2a }
+    :focus-visible { outline: 3px solid #d89d25; outline-offset: 3px }
+    input, select, textarea {
+      width: 100%; border: 1px solid #aebfb4; padding: .7rem;
+      background: white; color: #17382e; min-height: 44px;
+    }
+    textarea { resize: vertical; min-height: 130px; line-height: 1.6 }
+    label { display: grid; gap: .4rem; font-size: .9rem; font-weight: 600 }
+    h1, h2, h3, p { margin: 0 }
+    h1 { font-size: clamp(1.2rem, 3vw, 1.65rem); line-height: 1.25 }
+    h2 { font-size: 1.4rem }
+    h3 { font-size: 1.1rem; overflow-wrap: anywhere }
+    small, .muted { color: #526b5e }
+    header {
+      position: sticky; top: 0; z-index: 10; background: #065f46;
+      color: white; box-shadow: 0 2px 12px #12382120;
+    }
+    .wrap { max-width: 1100px; margin: auto; padding: 1.25rem }
+    header .wrap { padding-bottom: 0 }
+    .brand { padding-bottom: 1rem }
+    .brand p { color: #b9e6d3; margin-top: .35rem; font-size: .9rem }
+    nav { display: flex; gap: .4rem; overflow-x: auto }
+    nav button {
+      flex: 1; border: 0; border-radius: .6rem .6rem 0 0;
+      color: #dcfce7; background: transparent; white-space: nowrap;
+    }
+    nav button[aria-selected="true"] { background: #f3f7f4; color: #065f46 }
+    nav button:hover { background: #ffffff20 }
+    nav button[aria-selected="true"]:hover { background: #f3f7f4 }
+    main { min-height: 65vh }
+    .stack { display: grid; gap: 1.2rem }
+    .panel {
+      background: white; border: 1px solid #dbe6de;
+      border-radius: 1rem; padding: 1.25rem;
+    }
+    .grid { display: grid; gap: 1rem }
+    .fields { display: grid; gap: 1rem; grid-template-columns: 2fr 1fr 1fr 1fr }
+    .split { display: grid; gap: 1rem; grid-template-columns: 2fr 1fr }
+    .actions { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center }
+    .between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap }
+    .heading { margin-bottom: 1rem }
+    .table-wrap { overflow-x: auto }
+    table { width: 100%; border-collapse: collapse; text-align: left }
+    th, td { padding: .8rem .5rem; border-bottom: 1px solid #e5ece7; vertical-align: middle }
+    th { color: #526b5e; font-size: .85rem }
+    td:first-child { overflow-wrap: anywhere; min-width: 120px }
+    td .actions { flex-wrap: nowrap }
+    .ingredient-row {
+      display: grid; gap: .7rem; grid-template-columns: minmax(0,2fr) minmax(0,1fr) auto;
+      align-items: end; padding-bottom: .8rem;
+    }
+    .totals {
+      display: flex; flex-wrap: wrap; gap: 2rem; border-radius: .8rem;
+      background: #ecfdf5; padding: 1rem;
+    }
+    .totals strong { display: block; font-size: 1.6rem; color: #065f46 }
+    .cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)) }
+    .card { display: grid; gap: 1rem; align-content: start }
+    .card ul { padding-left: 1.25rem; margin: 0; line-height: 1.7 }
+    .steps { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6 }
+    .days { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)) }
+    .day { display: grid; gap: .8rem }
+    .empty { padding: 1.2rem 0; color: #526b5e }
+    .note { background: #fffbeb; color: #724b0a; padding: 1rem; border-radius: .7rem }
+    #notice { margin-bottom: 1rem }
+    footer { border-top: 1px solid #dbe6de; font-size: .85rem }
+    footer p { margin: .75rem 0 }
+    dialog {
+      width: min(720px, calc(100% - 2rem)); max-height: 90dvh;
+      overflow: auto; border: 0; border-radius: 1rem; padding: 1.3rem;
+      color: #17382e; box-shadow: 0 20px 80px #0005;
+    }
+    dialog::backdrop { background: #052e2388 }
+    dialog textarea { min-height: 40dvh; font-family: ui-monospace, monospace; font-size: .9rem }
+    [hidden] { display: none !important }
+    @media (max-width: 640px) {
+      .wrap { padding: 1rem }
+      .fields, .split { grid-template-columns: 1fr 1fr }
+      .fields label:first-child, .split label:first-child { grid-column: 1 / -1 }
+      .ingredient-row { grid-template-columns: minmax(0,1fr) minmax(90px,.7fr) }
+      .ingredient-row button { grid-column: 1 / -1 }
+      .panel { padding: 1rem }
+      .cards { grid-template-columns: 1fr }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      button { transition: background .15s }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky header and accessible view tabs. -->
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <h1>Food Cost & Recipe Manager</h1>
+        <p>Plan thoughtfully. Cook confidently. Export for Paprika 3.</p>
+      </div>
+      <nav role="tablist" aria-label="Manager views">
+        <button id="tab-ingredients" role="tab" aria-selected="true"
+          aria-controls="ingredients" data-tab="ingredients">Ingredients</button>
+        <button id="tab-recipes" role="tab" aria-selected="false" tabindex="-1"
+          aria-controls="recipes" data-tab="recipes">Recipes</button>
+        <button id="tab-plan" role="tab" aria-selected="false" tabindex="-1"
+          aria-controls="plan" data-tab="plan">Meal Plan</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <noscript><p class="note">Enable JavaScript to use this local recipe manager.</p></noscript>
+    <p id="notice" class="note" role="status" aria-live="polite" hidden></p>
+
+    <!-- Ingredient inventory. -->
+    <section id="ingredients" role="tabpanel" aria-labelledby="tab-ingredients" class="stack">
+      <div class="panel">
+        <h2 id="ingredient-heading" class="heading">Add an ingredient</h2>
+        <form id="ingredient-form" class="stack">
+          <div class="fields">
+            <label>Name
+              <input id="ingredient-name" required maxlength="120" autocomplete="off">
+            </label>
+            <label>Bulk price ($)
+              <input id="ingredient-price" type="number" min="0" max="1000000"
+                step="0.01" inputmode="decimal" required>
+            </label>
+            <label>Size / quantity
+              <input id="ingredient-size" type="number" min="0.000001" max="1000000000"
+                step="any" inputmode="decimal" required>
+            </label>
+            <label>Unit
+              <select id="ingredient-unit">
+                <option value="g">g — grams</option>
+                <option value="oz">oz — ounces</option>
+                <option value="lb">lb — pounds</option>
+                <option value="ml">ml — milliliters</option>
+                <option value="pc">pc — pieces</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions">
+            <button class="primary" type="submit">Save ingredient</button>
+            <button id="ingredient-cancel" type="button" hidden>Cancel edit</button>
+          </div>
+          <p class="muted">Recipe quantities use the ingredient’s saved unit. Prices update all linked recipe and meal costs.</p>
+        </form>
+      </div>
+      <div class="panel">
+        <h2 class="heading">Your inventory</h2>
+        <div class="table-wrap">
+          <table>
+            <caption class="muted" style="text-align:left;padding-bottom:.75rem">
+              Unit costs retain precision; recipe totals are rounded only for display.
+            </caption>
+            <thead><tr><th scope="col">Ingredient</th><th scope="col">Bulk price</th>
+              <th scope="col">Size</th><th scope="col">Unit cost</th><th scope="col">Actions</th></tr></thead>
+            <tbody id="inventory"></tbody>
+          </table>
+        </div>
+        <p id="inventory-empty" class="empty">Add your first ingredient to start costing recipes.</p>
+      </div>
+    </section>
+
+    <!-- Recipe editor and saved recipe cards. -->
+    <section id="recipes" role="tabpanel" aria-labelledby="tab-recipes" class="stack" hidden>
+      <div class="panel">
+        <h2 id="recipe-heading" class="heading">Create a recipe</h2>
+        <form id="recipe-form" class="stack">
+          <div class="split">
+            <label>Recipe title
+              <input id="recipe-title" required maxlength="160" autocomplete="off">
+            </label>
+            <label>Yield (servings)
+              <input id="recipe-yield" type="number" min="0.000001" max="1000000"
+                step="any" value="4" inputmode="decimal" required>
+            </label>
+          </div>
+          <fieldset style="border:0;padding:0;margin:0;min-width:0">
+            <legend style="font-weight:600;margin-bottom:.75rem">Ingredients</legend>
+            <div id="recipe-rows"></div>
+            <button id="add-row" type="button">+ Add ingredient</button>
+          </fieldset>
+          <div class="totals" aria-live="polite" aria-atomic="true">
+            <div>Total recipe cost<strong id="draft-total">$0.00</strong></div>
+            <div>Cost per serving<strong id="draft-serving">$0.00</strong></div>
+          </div>
+          <label>Step-by-step instructions
+            <textarea id="recipe-steps" maxlength="30000"></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="submit">Save recipe</button>
+            <button id="recipe-reset" type="button">Clear / cancel</button>
+          </div>
+        </form>
+      </div>
+      <div>
+        <h2 class="heading">Saved recipes</h2>
+        <div id="recipe-cards" class="cards"></div>
+      </div>
+    </section>
+
+    <!-- One reusable Monday–Sunday plan; each assignment costs one full recipe. -->
+    <section id="plan" role="tabpanel" aria-labelledby="tab-plan" class="stack" hidden>
+      <div class="panel between">
+        <div>
+          <h2>Your weekly meal plan</h2>
+          <p class="muted" style="margin-top:.5rem">One full recipe batch per day. Yield is shown for each selection.</p>
+        </div>
+        <button id="export-plan" class="primary">Export week for Paprika</button>
+      </div>
+      <div id="plan-days" class="days"></div>
+      <div class="panel totals">
+        <div>Weekly ingredient cost<strong id="week-total">$0.00</strong></div>
+        <p class="muted">Based on quantities used, not the cost of buying whole packages.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Storage and installation status are explicit, never implied. -->
+  <footer class="wrap">
+    <div class="actions">
+      <button id="backup">Download data backup</button>
+      <button id="worker-download">Download offline worker</button>
+      <button id="install" hidden>Install app</button>
+    </div>
+    <p id="pwa-status" role="status">Checking offline support…</p>
+    <p>Data stays in this browser. Clearing browser storage removes it. Keep backups.
+      Independent companion; not affiliated with Paprika.</p>
+    <details>
+      <summary>Enable offline installation</summary>
+      <p>Save this page as <code>index.html</code>. Download the worker and place
+        <code>sw.js</code> beside it on an HTTPS website (or localhost for development).
+        Reload while online once to prepare the offline cache. On iPhone, use
+        Safari’s Share → Add to Home Screen. Installation support varies by browser.</p>
+    </details>
+  </footer>
+
+  <!-- Native dialog supplies focus trapping and Escape-to-close behavior. -->
+  <dialog id="export-modal" aria-labelledby="export-heading" aria-describedby="export-help">
+    <div class="stack">
+      <div class="between">
+        <h2 id="export-heading">Export for Paprika</h2>
+        <button id="close-modal" aria-label="Close export">Close</button>
+      </div>
+      <p id="export-help" class="muted">
+        Copy this Markdown into Paprika’s notes, or paste the sections into a new
+        recipe’s fields. Automatic clipboard parsing depends on your Paprika version.
+      </p>
+      <label>Export text<textarea id="export-text" readonly spellcheck="false"></textarea></label>
+      <div class="actions">
+        <button id="copy-export" class="primary">Copy text</button>
+        <button id="download-export">Download Markdown</button>
+      </div>
+      <p id="copy-status" role="status" aria-live="polite"></p>
+    </div>
+  </dialog>
+
+  <!--
+    Real service-worker source embedded for single-file distribution.
+    Browsers cannot register inline, blob:, or data: service workers.
+    The download button exports this exact block as sw.js.
+    Increment VERSION when publishing an updated application.
+  -->
+  <script id="worker-source" type="text/plain">
+'use strict';
+const VERSION = 'v1';
+const ROOT = new URL('./', self.location.href);
+const APP = new URL('index.html', ROOT).href;
+const PREFIX = 'food-cost-manager:' + ROOT.href + ':';
+const CACHE = PREFIX + VERSION;
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const response = await fetch(APP, { cache: 'reload' });
+    if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) {
+      throw new Error('Unable to cache index.html');
+    }
+    const cache = await caches.open(CACHE);
+    await cache.put(APP, response);
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' ||
+      event.request.mode !== 'navigate' ||
+      url.origin !== ROOT.origin ||
+      ![ROOT.pathname, new URL(APP).pathname].includes(url.pathname)) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    try {
+      const response = await fetch(event.request);
+      if (!response.ok) throw new Error('Navigation failed');
+      if (response.headers.get('content-type')?.includes('text/html')) {
+        await cache.put(APP, response.clone());
+      }
+      return response;
+    } catch {
+      return await cache.match(APP) ||
+        new Response('Open this app online once to enable offline use.', {
+          status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+  })());
+});
+  </script>
+
+  <!-- Application: safe rendering, validation, persistence, costing, and exports. -->
+  <script>
+  'use strict';
+  (() => {
+    const $ = id => document.getElementById(id);
+    const KEY = 'food-cost-paprika-v1';
+    const UNITS = ['g', 'oz', 'lb', 'ml', 'pc'];
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const money = value => new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD'
+    }).format(value);
+    const number = value => new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 6
+    }).format(value);
+    const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+    const markdown = value => String(value).replace(/([\\`*_{}\[\]<>()#+.!|>-])/g, '\\$1');
+    const uid = () => globalThis.crypto?.randomUUID?.() ||
+      Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const validNumber = (value, min, max) =>
+      typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+    const validText = (value, max) =>
+      typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+    const fresh = () => ({
+      version: 1, ingredients: [], recipes: [], plan: Array(7).fill(''),
+      draft: { id: '', title: '', servings: '4', steps: '', rows: [] }
+    });
+
+    let state = fresh();
+    let savedRaw = null;
+    let locked = false;
+    let ingredientEdit = '';
+    let exportName = 'recipe.md';
+
+    function notify(message) {
+      $('notice').textContent = message;
+      $('notice').hidden = !message;
+    }
+
+    // Reject damaged or incompatible data before it reaches UI or calculations.
+    function validate(data) {
+      if (!data || data.version !== 1 || !Array.isArray(data.ingredients) ||
+          !Array.isArray(data.recipes) || !Array.isArray(data.plan) ||
+          data.plan.length !== 7) throw new Error('Invalid saved data');
+
+      const ids = new Set();
+      for (const ingredient of data.ingredients) {
+        if (!validText(ingredient.id, 100) || ids.has(ingredient.id) ||
+            !validText(ingredient.name, 120) ||
+            !validNumber(ingredient.price, 0, 1000000) ||
+            !validNumber(ingredient.size, 0.000001, 1000000000) ||
+            !UNITS.includes(ingredient.unit)) throw new Error('Invalid ingredient');
+        ids.add(ingredient.id);
+      }
+      const recipeIds = new Set();
+      for (const recipe of data.recipes) {
+        if (!validText(recipe.id, 100) || recipeIds.has(recipe.id) ||
+            !validText(recipe.title, 160) ||
+            !validNumber(recipe.servings, 0.000001, 1000000) ||
+            typeof recipe.steps !== 'string' || recipe.steps.length > 30000 ||
+            !Array.isArray(recipe.rows) || !recipe.rows.length ||
+            recipe.rows.some(row => !ids.has(row.ingredientId) ||
+              !validNumber(row.qty, 0.000001, 1000000000))) {
+          throw new Error('Invalid recipe');
+        }
+        recipeIds.add(recipe.id);
+      }
+      if (data.plan.some(id => id !== '' && !recipeIds.has(id))) {
+        throw new Error('Invalid meal plan');
+      }
+      const draft = data.draft;
+      if (!draft || typeof draft.id !== 'string' ||
+          (draft.id && !recipeIds.has(draft.id)) ||
+          typeof draft.title !== 'string' || draft.title.length > 160 ||
+          typeof draft.servings !== 'string' || draft.servings.length > 100 ||
+          typeof draft.steps !== 'string' || draft.steps.length > 30000 ||
+          !Array.isArray(draft.rows) ||
+          draft.rows.some(row => typeof row.ingredientId !== 'string' ||
+            (row.ingredientId && !ids.has(row.ingredientId)) ||
+            typeof row.qty !== 'string' || row.qty.length > 100)) {
+        throw new Error('Invalid draft');
+      }
+      return data;
+    }
+
+    try {
+      savedRaw = localStorage.getItem(KEY);
+      if (savedRaw !== null) state = validate(JSON.parse(savedRaw));
+    } catch {
+      locked = true;
+      notify('Saved data could not be read. It has not been overwritten. Download a backup before repairing browser storage.');
+    }
+
+    // Writes precede UI commits. Failed writes never masquerade as saved changes.
+    function commit(next) {
+      if (locked) {
+        notify('Saving is paused. Download a backup and reload to resolve the storage problem.');
+        return false;
+      }
+      try {
+        if (localStorage.getItem(KEY) !== savedRaw) {
+          locked = true;
+          notify('Data changed in another tab. Reload this page before making further changes.');
+          return false;
+        }
+        validate(next);
+        const raw = JSON.stringify(next);
+        localStorage.setItem(KEY, raw);
+        savedRaw = raw;
+        state = next;
+        return true;
+      } catch {
+        notify('Could not save. Browser storage may be full or unavailable. Download a backup; this change was not saved.');
+        return false;
+      }
+    }
+
+    const clone = () => JSON.parse(JSON.stringify(state));
+    const ingredientById = id => state.ingredients.find(item => item.id === id);
+    const recipeById = id => state.recipes.find(item => item.id === id);
+    const recipeCost = recipe => recipe.rows.reduce((sum, row) => {
+      const item = ingredientById(row.ingredientId);
+      return sum + (item ? item.price / item.size * Number(row.qty) : 0);
+    }, 0);
+    function unitCost(item) {
+      const cost = item.price / item.size;
+      return (cost === 0 ? '$0' : cost < 0.000001
+        ? '$' + cost.toExponential(4)
+        : '$' + new Intl.NumberFormat('en-US', { maximumFractionDigits: 6 }).format(cost))
+        + ' / ' + item.unit;
+    }
+
+    // Accessible tab switching, including arrow-key navigation.
+    function showTab(name, focus = false) {
+      document.querySelectorAll('[data-tab]').forEach(tab => {
+        const active = tab.dataset.tab === name;
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        $(tab.dataset.tab).hidden = !active;
+        if (active && focus) tab.focus();
+      });
+    }
+    const tabs = [...document.querySelectorAll('[data-tab]')];
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => showTab(tab.dataset.tab));
+      tab.addEventListener('keydown', event => {
+        let next;
+        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+        if (event.key === 'Home') next = 0;
+        if (event.key === 'End') next = tabs.length - 1;
+        if (next !== undefined) {
+          event.preventDefault();
+          showTab(tabs[next].dataset.tab, true);
+        }
+      });
+    });
+
+    // Ingredient CRUD; referenced units and ingredients are protected.
+    function resetIngredient() {
+      ingredientEdit = '';
+      $('ingredient-form').reset();
+      $('ingredient-unit').disabled = false;
+      $('ingredient-cancel').hidden = true;
+      $('ingredient-heading').textContent = 'Add an ingredient';
+    }
+    $('ingredient-cancel').addEventListener('click', resetIngredient);
+    $('ingredient-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const item = {
+        id: ingredientEdit || uid(),
+        name: $('ingredient-name').value.trim(),
+        price: Number($('ingredient-price').value),
+        size: Number($('ingredient-size').value),
+        unit: $('ingredient-unit').value
+      };
+      if (!item.name) return notify('Enter an ingredient name.');
+      if (state.ingredients.some(existing =>
+          existing.id !== item.id && existing.name.toLowerCase() === item.name.toLowerCase())) {
+        return notify('An ingredient with that name already exists. Edit it or use a different name.');
+      }
+      const next = clone();
+      const index = next.ingredients.findIndex(existing => existing.id === item.id);
+      if (index < 0) next.ingredients.push(item);
+      else next.ingredients[index] = item;
+      if (commit(next)) {
+        resetIngredient();
+        renderAll();
+        notify('Ingredient saved.');
+      }
+    });
+
+    $('inventory').addEventListener('click', event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const item = ingredientById(button.dataset.id);
+      if (!item) return;
+      const used = state.recipes.some(recipe => recipe.rows.some(row => row.ingredientId === item.id)) ||
+        state.draft.rows.some(row => row.ingredientId === item.id);
+      if (button.dataset.action === 'edit') {
+        ingredientEdit = item.id;
+        $('ingredient-name').value = item.name;
+        $('ingredient-price').value = item.price;
+        $('ingredient-size').value = item.size;
+        $('ingredient-unit').value = item.unit;
+        $('ingredient-unit').disabled = used;
+        $('ingredient-cancel').hidden = false;
+        $('ingredient-heading').textContent = 'Edit ingredient';
+        $('ingredient-name').focus();
+      } else {
+        if (used) return notify('Remove this ingredient from saved recipes and the current draft before deleting it.');
+        if (!confirm('Delete “' + item.name + '”?')) return;
+        const next = clone();
+        next.ingredients = next.ingredients.filter(existing => existing.id !== item.id);
+        if (commit(next)) {
+          if (ingredientEdit === item.id) resetIngredient();
+          renderAll();
+          notify('Ingredient deleted.');
+        }
+      }
+    });
+
+    function renderInventory() {
+      $('inventory-empty').hidden = state.ingredients.length > 0;
+      $('inventory').innerHTML = state.ingredients.map(item => `
+        <tr>
+          <td>${escapeHTML(item.name)}</td>
+          <td>${money(item.price)}</td>
+          <td>${number(item.size)} ${escapeHTML(item.unit)}</td>
+          <td style="white-space:nowrap">${unitCost(item)}</td>
+          <td><div class="actions">
+            <button data-action="edit" data-id="${escapeHTML(item.id)}"
+              aria-label="Edit ${escapeHTML(item.name)}">Edit</button>
+            <button class="danger" data-action="delete" data-id="${escapeHTML(item.id)}"
+              aria-label="Delete ${escapeHTML(item.name)}">Delete</button>
+          </div></td>
+        </tr>`).join('');
+    }
+
+    // Recipe drafts are persisted as they are edited, including unfinished rows.
+    function readDraft() {
+      return {
+        id: state.draft.id,
+        title: $('recipe-title').value,
+        servings: $('recipe-yield').value,
+        steps: $('recipe-steps').value,
+        rows: [...$('recipe-rows').children].map(row => ({
+          ingredientId: row.querySelector('select').value,
+          qty: row.querySelector('input').value
+        }))
+      };
+    }
+    function saveDraft() {
+      const draft = readDraft();
+      const next = clone();
+      next.draft = draft;
+      const saved = commit(next);
+      updateDraftTotals(draft);
+      return saved;
+    }
+    function updateDraftTotals(draft = readDraft()) {
+      const validRows = draft.rows.filter(row =>
+        ingredientById(row.ingredientId) && validNumber(Number(row.qty), 0.000001, 1000000000));
+      const total = recipeCost({ rows: validRows });
+      $('draft-total').textContent = money(total);
+      const servings = Number(draft.servings);
+      $('draft-serving').textContent =
+        validNumber(servings, 0.000001, 1000000) ? money(total / servings) : '—';
+    }
+    function renderDraft() {
+      const draft = state.draft;
+      $('recipe-title').value = draft.title;
+      $('recipe-yield').value = draft.servings;
+      $('recipe-steps').value = draft.steps;
+      $('recipe-heading').textContent = draft.id ? 'Edit recipe' : 'Create a recipe';
+      $('add-row').disabled = !state.ingredients.length;
+      $('recipe-rows').innerHTML = draft.rows.map((row, index) => {
+        const ingredient = ingredientById(row.ingredientId);
+        return `<div class="ingredient-row">
+          <label>Ingredient ${index + 1}
+            <select required data-row-select="${index}">
+              <option value="">Choose ingredient</option>
+              ${state.ingredients.map(item => `<option value="${escapeHTML(item.id)}"
+                ${item.id === row.ingredientId ? 'selected' : ''}>
+                ${escapeHTML(item.name)} (${escapeHTML(item.unit)})</option>`).join('')}
+            </select>
+          </label>
+          <label><span data-unit>Quantity${ingredient ? ' (' + ingredient.unit + ')' : ''}</span>
+            <input type="number" min="0.000001" max="1000000000" step="any"
+              inputmode="decimal" required value="${escapeHTML(row.qty)}">
+          </label>
+          <button type="button" class="danger" data-remove="${index}"
+            aria-label="Remove ingredient row ${index + 1}">Remove</button>
+        </div>`;
+      }).join('');
+      updateDraftTotals(draft);
+    }
+    $('add-row').addEventListener('click', () => {
+      if (!state.ingredients.length) return notify('Save an ingredient first.');
+      const next = clone();
+      next.draft = readDraft();
+      next.draft.rows.push({ ingredientId: '', qty: '' });
+      if (commit(next)) {
+        renderDraft();
+        $('recipe-rows').lastElementChild.querySelector('select').focus();
+      }
+    });
+    $('recipe-rows').addEventListener('click', event => {
+      const button = event.target.closest('[data-remove]');
+      if (!button) return;
+      const next = clone();
+      next.draft = readDraft();
+      next.draft.rows.splice(Number(button.dataset.remove), 1);
+      if (commit(next)) {
+        renderDraft();
+        $('add-row').focus();
+      }
+    });
+    $('recipe-form').addEventListener('input', () => {
+      document.querySelectorAll('.ingredient-row').forEach(row => {
+        const ingredient = ingredientById(row.querySelector('select').value);
+        row.querySelector('[data-unit]').textContent =
+          'Quantity' + (ingredient ? ' (' + ingredient.unit + ')' : '');
+      });
+      saveDraft();
+    });
+    $('recipe-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const draft = readDraft();
+      if (!draft.title.trim()) return notify('Enter a recipe title.');
+      if (!draft.rows.length) return notify('Add at least one ingredient.');
+      const recipe = {
+        id: draft.id || uid(), title: draft.title.trim(),
+        servings: Number(draft.servings), steps: draft.steps.trim(),
+        rows: draft.rows.map(row => ({
+          ingredientId: row.ingredientId, qty: Number(row.qty)
+        }))
+      };
+      if (recipe.rows.some(row => !ingredientById(row.ingredientId) ||
+          !validNumber(row.qty, 0.000001, 1000000000))) {
+        return notify('Select an ingredient and enter a positive quantity for every row.');
+      }
+      const next = clone();
+      const index = next.recipes.findIndex(item => item.id === recipe.id);
+      if (index < 0) next.recipes.push(recipe);
+      else next.recipes[index] = recipe;
+      next.draft = fresh().draft;
+      if (commit(next)) {
+        renderAll();
+        notify('Recipe saved.');
+      }
+    });
+    $('recipe-reset').addEventListener('click', () => {
+      if (!confirm('Clear the current recipe draft? Saved recipes will remain.')) return;
+      const next = clone();
+      next.draft = fresh().draft;
+      if (commit(next)) renderDraft();
+    });
+
+    function recipeMarkdown(recipe) {
+      return [
+        '# ' + markdown(recipe.title),
+        '',
+        '**Servings:** ' + number(recipe.servings),
+        '',
+        '## Ingredients',
+        ...recipe.rows.map(row => {
+          const ingredient = ingredientById(row.ingredientId);
+          return '- ' + number(row.qty) + ' ' + ingredient.unit + ' ' + markdown(ingredient.name);
+        }),
+        '',
+        '## Directions',
+        recipe.steps || 'No instructions provided.',
+        '',
+        '## Cost',
+        'Total: ' + money(recipeCost(recipe)),
+        'Per serving: ' + money(recipeCost(recipe) / recipe.servings)
+      ].join('\n');
+    }
+    function renderRecipes() {
+      $('recipe-cards').innerHTML = state.recipes.length ? state.recipes.map(recipe => `
+        <article class="panel card">
+          <div><h3>${escapeHTML(recipe.title)}</h3>
+            <p class="muted">${number(recipe.servings)} servings ·
+              ${money(recipeCost(recipe) / recipe.servings)} / serving</p></div>
+          <strong class="text-emerald-700">${money(recipeCost(recipe))} total</strong>
+          <ul>${recipe.rows.map(row => {
+            const item = ingredientById(row.ingredientId);
+            return `<li>${number(row.qty)} ${item.unit} ${escapeHTML(item.name)}</li>`;
+          }).join('')}</ul>
+          <details><summary>Instructions</summary>
+            <p class="steps">${escapeHTML(recipe.steps || 'No instructions provided.')}</p>
+          </details>
+          <div class="actions">
+            <button class="primary" data-action="export" data-id="${escapeHTML(recipe.id)}">Export for Paprika</button>
+            <button data-action="edit" data-id="${escapeHTML(recipe.id)}">Edit</button>
+            <button class="danger" data-action="delete" data-id="${escapeHTML(recipe.id)}">Delete</button>
+          </div>
+        </article>`).join('') : '<p class="empty">Your saved recipes will appear here.</p>';
+    }
+    $('recipe-cards').addEventListener('click', event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const recipe = recipeById(button.dataset.id);
+      if (!recipe) return;
+      if (button.dataset.action === 'export') {
+        openExport(recipeMarkdown(recipe), 'recipe.md');
+      } else if (button.dataset.action === 'edit') {
+        if ((state.draft.title || state.draft.steps || state.draft.rows.length) &&
+            !confirm('Replace the current draft with this recipe?')) return;
+        const next = clone();
+        next.draft = {
+          id: recipe.id, title: recipe.title, servings: String(recipe.servings),
+          steps: recipe.steps,
+          rows: recipe.rows.map(row => ({ ingredientId: row.ingredientId, qty: String(row.qty) }))
+        };
+        if (commit(next)) {
+          renderDraft();
+          $('recipe-title').focus();
+        }
+      } else {
+        if (!confirm('Delete “' + recipe.title + '” and remove its meal-plan assignments?')) return;
+        const next = clone();
+        next.recipes = next.recipes.filter(item => item.id !== recipe.id);
+        next.plan = next.plan.map(id => id === recipe.id ? '' : id);
+        if (next.draft.id === recipe.id) next.draft = fresh().draft;
+        if (commit(next)) {
+          renderAll();
+          notify('Recipe deleted.');
+        }
+      }
+    });
+
+    // Weekly planning uses current ingredient prices for all totals.
+    function renderPlan() {
+      $('plan-days').innerHTML = DAYS.map((day, index) => `
+        <article class="panel day">
+          <h3>${day}</h3>
+          <label>Recipe
+            <select data-day="${index}" aria-label="${day} recipe">
+              <option value="">No meal planned</option>
+              ${state.recipes.map(recipe => `<option value="${escapeHTML(recipe.id)}"
+                ${state.plan[index] === recipe.id ? 'selected' : ''}>
+                ${escapeHTML(recipe.title)}</option>`).join('')}
+            </select>
+          </label>
+          <p class="muted" id="day-cost-${index}"></p>
+        </article>`).join('');
+      updatePlanTotals();
+    }
+    function updatePlanTotals() {
+      let total = 0;
+      state.plan.forEach((id, index) => {
+        const recipe = recipeById(id);
+        const cost = recipe ? recipeCost(recipe) : 0;
+        total += cost;
+        $('day-cost-' + index).textContent = recipe
+          ? number(recipe.servings) + ' servings · ' + money(cost)
+          : 'No cost assigned';
+      });
+      $('week-total').textContent = money(total);
+    }
+    $('plan-days').addEventListener('change', event => {
+      if (!event.target.matches('[data-day]')) return;
+      const next = clone();
+      next.plan[Number(event.target.dataset.day)] = event.target.value;
+      if (commit(next)) updatePlanTotals();
+      else renderPlan();
+    });
+    $('export-plan').addEventListener('click', () => {
+      let total = 0;
+      const lines = ['# Weekly Meal Plan', '', 'One full recipe batch per planned day.', ''];
+      DAYS.forEach((day, index) => {
+        const recipe = recipeById(state.plan[index]);
+        const cost = recipe ? recipeCost(recipe) : 0;
+        total += cost;
+        lines.push('## ' + day, recipe
+          ? markdown(recipe.title) + ' — ' + number(recipe.servings) + ' servings — ' + money(cost)
+          : 'No meal planned.', '');
+      });
+      lines.push('**Weekly ingredient cost:** ' + money(total));
+      openExport(lines.join('\n'), 'weekly-meal-plan.md');
+    });
+
+    // Clipboard fallback leaves text selected for manual copying.
+    function openExport(text, filename) {
+      exportName = filename;
+      $('export-text').value = text;
+      $('copy-status').textContent = '';
+      $('export-modal').showModal();
+    }
+    $('close-modal').addEventListener('click', () => $('export-modal').close());
+    $('export-modal').addEventListener('click', event => {
+      if (event.target !== $('export-modal')) return;
+      const rect = $('export-modal').getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right ||
+          event.clientY < rect.top || event.clientY > rect.bottom) {
+        $('export-modal').close();
+      }
+    });
+    $('copy-export').addEventListener('click', async () => {
+      try {
+        if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText($('export-text').value);
+        $('copy-status').textContent = 'Copied. Ready to paste into Paprika.';
+      } catch {
+        $('export-text').focus();
+        $('export-text').select();
+        $('copy-status').textContent = 'Text selected. Use your device’s Copy command.';
+      }
+    });
+    function download(text, filename, type) {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
+    $('download-export').addEventListener('click', () =>
+      download($('export-text').value, exportName, 'text/markdown;charset=utf-8'));
+    $('backup').addEventListener('click', () => {
+      let raw;
+      try { raw = localStorage.getItem(KEY); } catch {}
+      download(raw ?? JSON.stringify(state, null, 2),
+        'food-cost-backup-' + new Date().toISOString().slice(0, 10) + '.json',
+        'application/json');
+    });
+    $('worker-download').addEventListener('click', () =>
+      download($('worker-source').textContent.trim(), 'sw.js', 'text/javascript'));
+
+    // Detect other-tab writes instead of silently overwriting newer data.
+    window.addEventListener('storage', event => {
+      if (event.key === KEY || event.key === null) {
+        locked = true;
+        notify('Browser data changed in another tab. Reload before editing to avoid overwriting changes.');
+      }
+    });
+
+    function renderAll() {
+      renderInventory();
+      renderDraft();
+      renderRecipes();
+      renderPlan();
+    }
+    renderAll();
+
+    // Generate actual PNG icons and a data-URI manifest without external assets.
+    function icon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#065f46';
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = '#ecfdf5';
+      ctx.lineWidth = size * 0.035;
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.28, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#ecfdf5';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold ' + size * 0.25 + 'px system-ui';
+      ctx.fillText('$', size / 2, size / 2 + size * 0.01);
+      return canvas.toDataURL('image/png');
+    }
+    const appURL = new URL('./index.html', location.href);
+    const scopeURL = new URL('./', appURL);
+    const icon192 = icon(192);
+    const manifest = {
+      id: appURL.href,
+      name: 'Food Cost & Recipe Manager for Paprika 3',
+      short_name: 'Food Cost',
+      description: 'Ingredient costs, recipes, and weekly meal planning.',
+      start_url: appURL.href,
+      scope: scopeURL.href,
+      display: 'standalone',
+      background_color: '#f3f7f4',
+      theme_color: '#065f46',
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: icon(512), sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    $('manifest').href = 'data:application/manifest+json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(manifest));
+    $('touch-icon').href = icon192;
+
+    let installPrompt;
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      installPrompt = event;
+      $('install').hidden = false;
+    });
+    $('install').addEventListener('click', async () => {
+      if (!installPrompt) return;
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      $('install').hidden = true;
+    });
+    window.addEventListener('appinstalled', () => {
+      $('install').hidden = true;
+    });
+
+    // Register only a genuine same-origin worker served as JavaScript.
+    async function prepareOffline() {
+      if (!['https:', 'http:'].includes(location.protocol) ||
+          !window.isSecureContext || !('serviceWorker' in navigator)) {
+        $('pwa-status').textContent =
+          'Offline installation requires HTTPS or localhost plus the downloaded sw.js file.';
+        return;
+      }
+      try {
+        const workerURL = new URL('./sw.js', location.href);
+        const registration = await navigator.serviceWorker.register(workerURL.href, {
+          scope: scopeURL.href,
+          updateViaCache: 'none'
+        });
+        const showReady = () => {
+          $('pwa-status').textContent =
+            'Offline support is ready. Your data is saved on this device.';
+        };
+        if (registration.active) showReady();
+        else {
+          $('pwa-status').textContent = 'Preparing the offline cache…';
+          const worker = registration.installing || registration.waiting;
+          worker?.addEventListener('statechange', () => {
+            if (worker.state === 'activated') showReady();
+            if (worker.state === 'redundant') {
+              $('pwa-status').textContent = 'Offline setup failed. Check hosting and reload online.';
+            }
+          });
+        }
+      } catch {
+        $('pwa-status').textContent =
+          'Offline support is not enabled. Place the downloaded sw.js beside index.html and reload over HTTPS.';
+      }
+    }
+    prepareOffline();
+  })();
+  </script>
+</body>
+</html>
